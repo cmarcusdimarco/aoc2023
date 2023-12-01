@@ -1,0 +1,2 @@
+# Ignore Rust target directory and contents
+/target/**
