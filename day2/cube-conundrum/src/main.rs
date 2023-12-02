@@ -57,14 +57,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    // Now that we've processed all lines, sum the elements in impossible_games.
+    // Now that we've processed all lines, sum the elements in possible_games.
     let sum = possible_games
         .into_iter()
         .reduce(|a, b| a + b)
         .expect("There was an error calculating the sum of the vector elements.");
 
-    // The sum of all numbers 1-100 is
-    println!("The sum of the IDs of impossible games is: {:?}", sum);
+    println!("The sum of the IDs of possible games is: {:?}", sum);
 
     Ok(())
 }
