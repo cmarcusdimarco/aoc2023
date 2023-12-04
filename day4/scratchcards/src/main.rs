@@ -38,7 +38,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
 
         // Increase points by the result of 2 raised to the power of winning values present
-        points += 2u32.pow(numbers_present);
+        if numbers_present > 0 {
+            points += 2u32.pow(numbers_present - 1);
+        }
     }
 
     println!("The total number of winning points is: {:?}", points);
