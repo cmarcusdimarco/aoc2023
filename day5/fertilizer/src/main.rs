@@ -106,7 +106,9 @@ fn find_lowest_location_value(file: &str) -> u32 {
             'current_range_map_loop: for range_map in map {
                 // Since the RangeMaps are sorted, we can match
                 match range_map {
-                    rm if (rm.source..rm.source + rm.range).contains(value) => value = 
+                    rm if (rm.source..rm.source + rm.range).contains(value) => value = rm.destination + (value - rm.source),
+                    rm if rm.source > value => break 'current_range_map_loop,
+                    _ => (),
                 }
             }
         }
