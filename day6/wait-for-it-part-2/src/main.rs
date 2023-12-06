@@ -2,8 +2,8 @@ use std::fs;
 
 #[derive(Debug, PartialEq, Eq)]
 struct Race {
-    time: u32,
-    distance: u32
+    time: u64,
+    distance: u64
 }
 
 impl Race {
@@ -24,12 +24,12 @@ fn parse_races(file_path: &str) -> Vec<Race> {
         Some((a, b)) if a.starts_with("Time:") && b.starts_with("Distance:") => {
             // Reduce the slices to just the data
             let a = a.split_once(':').unwrap().1.trim().replace(" ", "");
-            let value = a.parse::<u32>().expect("There was an error parsing the value from the input");
+            let value = a.parse::<u64>().expect("There was an error parsing the value from the input");
             let mut race = Race::empty();
             race.time = value;
 
             let b = b.split_once(':').unwrap().1.trim().replace(" ", "");
-            race.distance = b.parse::<u32>().unwrap();
+            race.distance = b.parse::<u64>().unwrap();
             
             races.push(race);
         },
@@ -39,7 +39,7 @@ fn parse_races(file_path: &str) -> Vec<Race> {
     races
 }
 
-fn quantify_winning_strategies(races: &Vec<Race>) -> Vec<u32> {
+fn quantify_winning_strategies(races: &Vec<Race>) -> Vec<u64> {
     // The furthest distance achievable in any race is achieved at race.time / 2.
     // The minimum winning distance achievable is at the value of x closest to 0 which satisfies
     //     x * (race.time - x) > race.distance
@@ -47,7 +47,7 @@ fn quantify_winning_strategies(races: &Vec<Race>) -> Vec<u32> {
     // This quantity is equal to ((race.time / 2) - x + 1) * 2  where race.time is an odd number, and
     //     ((race.time / 2) - x + 1) * 2 - 1 where race.time is an even number
     
-    let mut winning_strategies: Vec<u32> = Vec::new();
+    let mut winning_strategies: Vec<u64> = Vec::new();
 
     for race in races {
         'current_race: for  x in 1..race.time / 2 {
@@ -72,7 +72,7 @@ fn main() {
 
     let winning_strategies = quantify_winning_strategies(&races);
 
-    let product: u32 = winning_strategies.iter().product();
+    let product: u64 = winning_strategies.iter().product();
 
     println!("The product of all winning strategies is: {:?}", product);
 }
