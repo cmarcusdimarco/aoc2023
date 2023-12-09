@@ -14,14 +14,14 @@ enum Card {
     Ten,
     Queen,
     King,
-    Ace
+    Ace,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct Hand {
     cards: Vec<Card>,
     bid: u32,
-    rank: u32
+    rank: u32,
 }
 
 impl Hand {
@@ -29,7 +29,7 @@ impl Hand {
         let mut instance = Self {
             cards: Vec::new(),
             bid,
-            rank: 0
+            rank: 0,
         };
 
         for c in cards.chars() {
@@ -47,7 +47,7 @@ impl Hand {
                 'Q' => Card::Queen,
                 'K' => Card::King,
                 'A' => Card::Ace,
-                _ => panic!("{} is not a valid card", c.to_string())
+                _ => panic!("{} is not a valid card", c.to_string()),
             };
 
             instance.cards.push(card);
@@ -77,7 +77,7 @@ enum HandType {
     ThreeOfAKind,
     TwoPair,
     OnePair,
-    HighCard
+    HighCard,
 }
 
 fn parse_hands(path: &str) -> HashMap<HandType, Vec<Hand>> {
@@ -101,7 +101,10 @@ fn parse_hands(path: &str) -> HashMap<HandType, Vec<Hand>> {
             if let Card::Joker = card {
                 jokers += 1;
             } else {
-                hand_map.entry(card.clone()).and_modify(|count| *count += 1).or_insert(1);
+                hand_map
+                    .entry(card.clone())
+                    .and_modify(|count| *count += 1)
+                    .or_insert(1);
             }
         }
 
@@ -120,15 +123,22 @@ fn parse_hands(path: &str) -> HashMap<HandType, Vec<Hand>> {
         let hand_type = match hand_map {
             // The first case needs to check for len() <= 1 since a hand of 5 Jokers is not a HighCard
             m if m.len() <= 1 => HandType::FiveOfAKind,
-            m if m.len() == 2 && m.values().collect::<Vec<&u32>>().contains(&&4u32) => HandType::FourOfAKind,
+            m if m.len() == 2 && m.values().collect::<Vec<&u32>>().contains(&&4u32) => {
+                HandType::FourOfAKind
+            }
             m if m.len() == 2 => HandType::FullHouse,
-            m if m.len() == 3 && m.values().collect::<Vec<&u32>>().contains(&&3u32) => HandType::ThreeOfAKind,
+            m if m.len() == 3 && m.values().collect::<Vec<&u32>>().contains(&&3u32) => {
+                HandType::ThreeOfAKind
+            }
             m if m.len() == 3 => HandType::TwoPair,
             m if m.len() == 4 => HandType::OnePair,
             _ => HandType::HighCard,
         };
 
-        hands.entry(hand_type).and_modify(|vec| vec.push(hand.clone())).or_insert(vec![hand]);
+        hands
+            .entry(hand_type)
+            .and_modify(|vec| vec.push(hand.clone()))
+            .or_insert(vec![hand]);
     }
 
     hands
@@ -148,7 +158,7 @@ fn assign_rankings(hands: &mut HashMap<HandType, Vec<Hand>>) {
         HandType::ThreeOfAKind,
         HandType::FullHouse,
         HandType::FourOfAKind,
-        HandType::FiveOfAKind
+        HandType::FiveOfAKind,
     ];
 
     for hand_type in hand_types_lowest_to_highest.into_iter() {
@@ -166,7 +176,7 @@ fn assign_rankings(hands: &mut HashMap<HandType, Vec<Hand>>) {
 
 fn calculate_winnings(hands: HashMap<HandType, Vec<Hand>>) -> u64 {
     let mut sum: u64 = 0;
-    
+
     for set_of_hands in hands.values() {
         for hand in set_of_hands.into_iter() {
             sum += u64::from(hand.bid * hand.rank)
@@ -181,7 +191,10 @@ fn main() {
 
     assign_rankings(&mut hands);
 
-    println!("The amount of winnings from the provided hands is: {:?}", calculate_winnings(hands));
+    println!(
+        "The amount of winnings from the provided hands is: {:?}",
+        calculate_winnings(hands)
+    );
 }
 
 #[cfg(test)]
@@ -192,7 +205,14 @@ mod tests {
     fn parses_hands() {
         let mut expected: HashMap<HandType, Vec<Hand>> = HashMap::new();
 
-        expected.insert(HandType::FourOfAKind, vec![Hand::new("T55J5", 684), Hand::new("KTJJT", 220), Hand::new("QQQJA", 483)]);
+        expected.insert(
+            HandType::FourOfAKind,
+            vec![
+                Hand::new("T55J5", 684),
+                Hand::new("KTJJT", 220),
+                Hand::new("QQQJA", 483),
+            ],
+        );
         expected.insert(HandType::TwoPair, vec![Hand::new("KK677", 28)]);
         expected.insert(HandType::OnePair, vec![Hand::new("32T3K", 765)]);
 
@@ -203,7 +223,11 @@ mod tests {
     fn assigns_rankings() {
         let mut expected: HashMap<HandType, Vec<Hand>> = HashMap::new();
 
-        let mut fours_of_a_kind = vec![Hand::new("T55J5", 684), Hand::new("QQQJA", 483), Hand::new("KTJJT", 220)];
+        let mut fours_of_a_kind = vec![
+            Hand::new("T55J5", 684),
+            Hand::new("QQQJA", 483),
+            Hand::new("KTJJT", 220),
+        ];
         let mut two_pairs = vec![Hand::new("KK677", 28)];
         let mut one_pair = vec![Hand::new("32T3K", 765)];
 

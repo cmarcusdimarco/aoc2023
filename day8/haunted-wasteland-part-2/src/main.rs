@@ -1,10 +1,11 @@
+use num_integer::Integer;
 use std::{collections::HashMap, fs};
 
 #[derive(Debug, PartialEq, Eq)]
 struct Node {
     name: String,
     left: String,
-    right: String
+    right: String,
 }
 
 impl Node {
@@ -12,7 +13,7 @@ impl Node {
         Self {
             name: String::from(""),
             left: String::from(""),
-            right: String::from("")
+            right: String::from(""),
         }
     }
 
@@ -20,7 +21,7 @@ impl Node {
         Self {
             name: String::from(name),
             left: String::from(left),
-            right: String::from(right)
+            right: String::from(right),
         }
     }
 }
@@ -56,8 +57,10 @@ fn parse_map(path: &str) -> (String, HashMap<String, Node>) {
 
                 network.insert(node.name.clone(), node);
             }
-        },
-        _ => panic!("File contents did not match expected format. Please check contents and try again."),
+        }
+        _ => panic!(
+            "File contents did not match expected format. Please check contents and try again."
+        ),
     }
 
     (destination, network)
@@ -76,30 +79,44 @@ fn derive_starting_nodes(network: &HashMap<String, Node>) -> Vec<String> {
     starting_nodes
 }
 
-fn calculate_nodes_visited(destination: String, network: HashMap<String, Node>, starting_nodes: Vec<String>) -> u64 {
-    let mut visited_counter:u64 = 0;
+fn calculate_nodes_visited(
+    destination: String,
+    network: HashMap<String, Node>,
+    starting_nodes: Vec<String>,
+) -> u64 {
+    let mut visited_counter: u64 = 0;
+    let target_completed_paths = starting_nodes.len();
     let mut current_keys = starting_nodes;
+    let mut complete_paths: Vec<u64> = Vec::new();
 
     'outer: loop {
         for step in destination.chars() {
             let mut non_z_key_detected = false;
             let mut new_keys: Vec<String> = Vec::new();
-            
+
             for key in current_keys.iter() {
                 if !key.ends_with('Z') {
                     non_z_key_detected = true;
+                } else {
+                    complete_paths.push(visited_counter);
+
+                    if complete_paths.len() == target_completed_paths {
+                        break 'outer;
+                    } else {
+                        continue;
+                    }
                 }
-                
+
                 let current_node = network.get(key).expect("Key/value pair mismatch detected.");
                 let new_key = match step {
                     'L' => current_node.left.clone(),
                     'R' => current_node.right.clone(),
                     _ => panic!("Directions contained a value other than L or R"),
                 };
-                
+
                 new_keys.push(new_key);
             }
-            
+
             // If all keys end in Z, break the loop
             if !non_z_key_detected {
                 break 'outer;
@@ -110,14 +127,20 @@ fn calculate_nodes_visited(destination: String, network: HashMap<String, Node>, 
         }
     }
 
-    visited_counter
+    complete_paths
+        .into_iter()
+        .reduce(|acc, x| acc.lcm(&x))
+        .unwrap()
 }
 
 fn main() {
     let (destination, network) = parse_map("input.txt");
     let starting_nodes = derive_starting_nodes(&network);
 
-    println!("The number of steps required to reach ZZZ is: {:?}", calculate_nodes_visited(destination, network, starting_nodes));
+    println!(
+        "The number of steps required to reach ZZZ is: {:?}",
+        calculate_nodes_visited(destination, network, starting_nodes)
+    );
 }
 
 #[cfg(test)]
@@ -159,6 +182,13 @@ mod tests {
     #[test]
     fn calculates_nodes_visited() {
         let (destination, network) = parse_map("test.txt");
-        assert_eq!(6, calculate_nodes_visited(destination, network, vec![String::from("11A"), String::from("22A")]))
+        assert_eq!(
+            6,
+            calculate_nodes_visited(
+                destination,
+                network,
+                vec![String::from("11A"), String::from("22A")]
+            )
+        )
     }
 }
