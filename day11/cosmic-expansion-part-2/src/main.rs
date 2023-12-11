@@ -79,7 +79,7 @@ fn locate_galaxies(image: &Vec<String>) -> Vec<Point> {
                     millions_of_columns += 1;
                     increment_mil_rows = true;
                 },
-                '#' => galaxies.push(Point::new(line_index + millions_of_rows * 1_000_000, column_index + millions_of_columns * 1_000_000)),
+                '#' => galaxies.push(Point::new(line_index + millions_of_rows * 999_999, column_index + millions_of_columns * 999_999)),
                 _ => (),
             }
         }
@@ -143,18 +143,16 @@ mod tests {
     #[test]
     fn adds_galaxy_expansion() {
         let expected = vec![
-            "....#........",
-            ".........#...",
-            "#............",
-            ".............",
-            ".............",
-            "........#....",
-            ".#...........",
-            "............#",
-            ".............",
-            ".............",
-            ".........#...",
-            "#....#.......",
+            "..!#.!..!.",
+            "..!..!.#!.",
+            "#.!..!..!.",
+            "--X--X--X-",
+            "..!..!#.!.",
+            ".#!..!..!.",
+            "..!..!..!#",
+            "--X--X--X-",
+            "..!..!.#!.",
+            "#.!.#!..!.",
         ];
 
         let mut actual = parse_image("test.txt");
@@ -166,15 +164,15 @@ mod tests {
     #[test]
     fn locates_galaxies() {
         let expected = vec![
-            Point::new(0, 4),
-            Point::new(1, 9),
+            Point::new(0, 1_000_002),
+            Point::new(1, 2_000_005),
             Point::new(2, 0),
-            Point::new(5, 8),
-            Point::new(6, 1),
-            Point::new(7, 12),
-            Point::new(10, 9),
-            Point::new(11, 0),
-            Point::new(11, 5),
+            Point::new(1_000_003, 2_000_004),
+            Point::new(1_000_004, 1),
+            Point::new(1_000_005, 3_000_006),
+            Point::new(2_000_006, 2_000_005),
+            Point::new(2_000_007, 0),
+            Point::new(2_000_007, 1_000_003),
         ];
 
         let mut actual = parse_image("test.txt");
@@ -189,6 +187,6 @@ mod tests {
         add_galaxy_expansion(&mut actual);
         let galaxies = locate_galaxies(&actual);
 
-        assert_eq!(374usize, calculate_sum_of_paths(&galaxies))
+        assert_eq!(82_000_210usize, calculate_sum_of_paths(&galaxies))
     }
 }
