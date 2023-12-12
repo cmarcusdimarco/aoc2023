@@ -64,7 +64,24 @@ fn calculate_possible_arrangements(row: &Row) {
     let target_operationals: u32 = row.sequence.iter().sum();
     let quantity_to_change = target_operationals - current_operationals;
 
-    
+    // Start the recursion
+    recurse(&row, 0, quantity_to_change, Vec::new());
+}
+
+fn recurse(row: &Row, index: usize, target: u32, accumulator: Vec<Condition>) {
+
+    // Base case
+    if accumulator.iter().fold(0u32, |mut acc, x| { if let Condition::Operational = x { acc += 1;} acc } ) == target {
+        match 
+    }
+}
+
+fn sequence_is_valid(springs: &Vec<Condition>, sequence: &Vec<u32>) {
+    for condition in springs.iter() {
+        match condition {
+            
+        }
+    }
 }
 
 fn main() {
