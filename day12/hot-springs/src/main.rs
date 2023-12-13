@@ -1,6 +1,6 @@
 use std::fs;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 enum Condition {
     Operational,
     Damaged,
@@ -22,7 +22,7 @@ fn parse_rows(path: &str) -> Vec<Row> {
             springs: Vec::new(),
             sequence: Vec::new(),
         };
-        
+
         let (condition_records, damaged_spring_sequence) = line
             .split_once(' ')
             .expect("Each line should be separated by a single space.");
@@ -43,7 +43,7 @@ fn parse_rows(path: &str) -> Vec<Row> {
                 .parse::<u32>()
                 .expect("Non-numeric value present in damaged_spring_sequence");
 
-            row.sequence.push(segment);    
+            row.sequence.push(segment);
         }
 
         rows.push(row);
@@ -52,40 +52,90 @@ fn parse_rows(path: &str) -> Vec<Row> {
     rows
 }
 
-fn calculate_possible_arrangements(row: &Row) {
+fn calculate_possible_arrangements(row: &Row) -> u32 {
     // Our strategy will be to recurse through valid combinations and break out early
     // if there is a conflict between the combination and the Row's sequence.
-    //
+
+    // Start the recursion
+    recurse(&row, 0, Vec::new())
+}
+
+fn recurse(row: &Row, index: usize, mut accumulator: Vec<Condition>) -> u32 {
+    // Base case
+    if index == row.springs.len() {
+        return match sequence_is_valid(&accumulator, &row.sequence) {
+            true => 1u32,
+            false => 0u32,
+        };
+    } else {
+        let current_spring = row.springs.iter().nth(index);
+
+        return match current_spring {
+            Some(Condition::Unknown) => {
+                let mut second_accumulator = accumulator.clone();
+                accumulator.push(Condition::Damaged);
+                second_accumulator.push(Condition::Operational);
+                recurse(row, index + 1, accumulator) + recurse(row, index + 1, second_accumulator)
+            }
+            Some(c) => {
+                accumulator.push(c.clone());
+                recurse(row, index + 1, accumulator)
+            }
+            None => panic!("Index violation on row.springs"),
+        };
+    }
+}
+
+fn sequence_is_valid(springs: &Vec<Condition>, target_sequence: &Vec<u32>) -> bool {
     // There are 2^n possible combinations, where n is the number of Condition::Unknowns.
     //
     // We can reduce this number firstly by calculating the difference between the sum
-    // of a Row's sequence and the amount of Condition::Operationals present.
-    let current_operationals = row.springs.iter().fold(0u32, |mut acc, x| { if let Condition::Operational = x { acc += 1;} acc } );
-    let target_operationals: u32 = row.sequence.iter().sum();
-    let quantity_to_change = target_operationals - current_operationals;
+    // of a Row's sequence and the amount of Condition::Damaged present.
+    let accumulated_damaged = springs.iter().fold(0u32, |acc, x| {
+        if let Condition::Damaged = x {
+            acc + 1
+        } else {
+            acc
+        }
+    });
 
-    // Start the recursion
-    recurse(&row, 0, quantity_to_change, Vec::new());
-}
-
-fn recurse(row: &Row, index: usize, target: u32, accumulator: Vec<Condition>) {
-
-    // Base case
-    if accumulator.iter().fold(0u32, |mut acc, x| { if let Condition::Operational = x { acc += 1;} acc } ) == target {
-        match 
+    if accumulated_damaged != target_sequence.iter().sum() {
+        return false;
     }
-}
 
-fn sequence_is_valid(springs: &Vec<Condition>, sequence: &Vec<u32>) {
+    let mut sequence: Vec<u32> = Vec::new();
+    let mut counter = 0;
+
     for condition in springs.iter() {
         match condition {
-            
+            Condition::Damaged => counter += 1,
+            Condition::Operational => {
+                if counter > 0 {
+                    sequence.push(counter);
+                }
+                counter = 0;
+            }
+            _ => (),
         }
     }
+
+    if counter > 0 {
+        sequence.push(counter)
+    }
+
+    *target_sequence == sequence
 }
 
 fn main() {
-    println!("Hello, world!");
+    let rows = parse_rows("input.txt");
+    let sum = rows
+        .iter()
+        .fold(0u32, |acc, x| acc + calculate_possible_arrangements(x));
+
+    println!(
+        "The sum of possible arrangements of broken equipment is: {:?}",
+        sum
+    );
 }
 
 #[cfg(test)]
@@ -208,5 +258,34 @@ mod tests {
         ];
 
         assert_eq!(expected, parse_rows("test.txt"))
+    }
+
+    #[test]
+    fn calculates_possible_arrangements() {
+        let rows = parse_rows("test.txt");
+
+        let actual = rows
+            .iter()
+            .fold(0u32, |acc, x| acc + calculate_possible_arrangements(x));
+
+        assert_eq!(21, actual)
+    }
+
+    #[test]
+    fn validates_sequence() {
+        let row = Row {
+            springs: vec![
+                Condition::Damaged,
+                Condition::Operational,
+                Condition::Damaged,
+                Condition::Operational,
+                Condition::Damaged,
+                Condition::Damaged,
+                Condition::Damaged,
+            ],
+            sequence: vec![1, 1, 3],
+        };
+
+        assert_eq!(true, sequence_is_valid(&row.springs, &row.sequence))
     }
 }
