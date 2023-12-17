@@ -1,4 +1,7 @@
-use std::{collections::HashSet, fs};
+use std::{
+    collections::{HashSet, VecDeque},
+    fs,
+};
 
 enum Direction {
     North,
@@ -20,128 +23,102 @@ fn parse_contraption(path: &str) -> Vec<String> {
 
 fn energize_tiles(contraption: &Vec<String>) -> HashSet<(usize, usize)> {
     let mut energized_tiles: HashSet<(usize, usize)> = HashSet::new();
+    let mut queue: VecDeque<(i8, i8, Direction)> = VecDeque::new();
 
     // We can recurse through the path of the grid in order to more easily support
     // the multiple pathing.
-    visit_tile((0, 0), Direction::West, contraption, &mut energized_tiles);
+    queue.push_back((0, 0, Direction::West));
+
+    while queue.len() > 0 {
+        let (row, col, direction) = queue.pop_front().unwrap();
+        visit_tile(
+            (row, col),
+            direction,
+            contraption,
+            &mut energized_tiles,
+            &mut queue,
+        );
+    }
 
     energized_tiles
 }
 
 fn visit_tile(
-    point: (usize, usize),
+    point: (i8, i8),
     from: Direction,
     contraption: &Vec<String>,
     visited: &mut HashSet<(usize, usize)>,
+    queue: &mut VecDeque<(i8, i8, Direction)>,
 ) {
-    // If the point is within the grid, insert into the visited set
-    visited.insert(point);
-
-    // Check that the next point will not be beyond the indices of the grid
-    if point.0 == 0
-        || point.1 == 0
-        || point.0 == contraption[0].len() - 1
-        || point.1 == contraption.len() - 1
+    // Check that the point will not be beyond the indices of the grid
+    if point.0 < 0
+        || point.1 < 0
+        || point.0 >= contraption[0].len().try_into().unwrap()
+        || point.1 >= contraption.len().try_into().unwrap()
     {
         return;
     }
 
+    let visited_point = (
+        usize::try_from(point.0).unwrap(),
+        usize::try_from(point.1).unwrap(),
+    );
+
+    // If the point is within the grid, insert into the visited set
+    visited.insert(visited_point);
+
     // Move on to the next point
-    match contraption[point.1].chars().nth(point.0).unwrap() {
+    match contraption[visited_point.1]
+        .chars()
+        .nth(visited_point.0)
+        .unwrap()
+    {
         '\\' => match from {
-            Direction::North => visit_tile(
-                (point.0 + 1, point.1),
-                Direction::West,
-                contraption,
-                visited,
-            ),
-            Direction::East => visit_tile(
-                (point.0, point.1 - 1),
-                Direction::South,
-                contraption,
-                visited,
-            ),
-            Direction::South => visit_tile(
-                (point.0 - 1, point.1),
-                Direction::East,
-                contraption,
-                visited,
-            ),
-            Direction::West => visit_tile(
-                (point.0, point.1 + 1),
-                Direction::North,
-                contraption,
-                visited,
-            ),
+            Direction::North => queue.push_back((point.0 + 1, point.1, Direction::West)),
+            Direction::East => queue.push_back((point.0, point.1 - 1, Direction::South)),
+            Direction::South => queue.push_back((point.0 - 1, point.1, Direction::East)),
+            Direction::West => queue.push_back((point.0, point.1 + 1, Direction::North)),
         },
         '/' => match from {
-            Direction::North => visit_tile(
-                (point.0 - 1, point.1),
-                Direction::East,
-                contraption,
-                visited,
-            ),
-            Direction::East => visit_tile(
-                (point.0, point.1 + 1),
-                Direction::North,
-                contraption,
-                visited,
-            ),
-            Direction::South => visit_tile(
-                (point.0 + 1, point.1),
-                Direction::West,
-                contraption,
-                visited,
-            ),
-            Direction::West => visit_tile(
-                (point.0, point.1 - 1),
-                Direction::South,
-                contraption,
-                visited,
-            ),
+            Direction::North => queue.push_back((point.0 - 1, point.1, Direction::East)),
+            Direction::East => queue.push_back((point.0, point.1 + 1, Direction::North)),
+            Direction::South => queue.push_back((point.0 + 1, point.1, Direction::West)),
+            Direction::West => queue.push_back((point.0, point.1 - 1, Direction::South)),
         },
         '-' => match from {
-            Direction::East => visit_tile((point.0 - 1, point.1), from, contraption, visited),
-            Direction::West => visit_tile((point.0 + 1, point.1), from, contraption, visited),
+            Direction::East => queue.push_back((point.0 - 1, point.1, from)),
+            Direction::West => queue.push_back((point.0 + 1, point.1, from)),
             Direction::North | Direction::South => {
-                visit_tile(
-                    (point.0 - 1, point.1),
-                    Direction::West,
-                    contraption,
-                    visited,
-                );
-                visit_tile(
-                    (point.0 + 1, point.1),
-                    Direction::East,
-                    contraption,
-                    visited,
-                );
+                queue.push_back((point.0 - 1, point.1, Direction::West));
+                queue.push_back((point.0 + 1, point.1, Direction::East));
             }
         },
         '|' => match from {
-            Direction::North => visit_tile((point.0, point.1 + 1), from, contraption, visited),
-            Direction::South => visit_tile((point.0, point.1 - 1), from, contraption, visited),
+            Direction::North => queue.push_back((point.0, point.1 + 1, from)),
+            Direction::South => queue.push_back((point.0, point.1 - 1, from)),
             Direction::East | Direction::West => {
-                visit_tile(
-                    (point.0, point.1 + 1),
-                    Direction::North,
-                    contraption,
-                    visited,
-                );
-                visit_tile(
-                    (point.0, point.1 - 1),
-                    Direction::South,
-                    contraption,
-                    visited,
-                );
+                queue.push_back((point.0, point.1 + 1, Direction::North));
+                queue.push_back((point.0, point.1 - 1, Direction::South));
             }
+        },
+        '.' => match from {
+            Direction::North => queue.push_back((point.0, point.1 + 1, from)),
+            Direction::East => queue.push_back((point.0 - 1, point.1, from)),
+            Direction::South => queue.push_back((point.0, point.1 - 1, from)),
+            Direction::West => queue.push_back((point.0 + 1, point.1, from)),
         },
         _ => (),
     }
 }
 
 fn main() {
-    println!("Hello, world!");
+    let contraption = parse_contraption("input.txt");
+    let energized_tiles = energize_tiles(&contraption);
+
+    println!(
+        "The amount of tiles energized is: {:?}",
+        energized_tiles.len()
+    );
 }
 
 #[cfg(test)]
