@@ -30,9 +30,9 @@ fn energize_tiles(contraption: &Vec<String>) -> HashSet<(usize, usize)> {
     queue.push_back((0, 0, Direction::West));
 
     while queue.len() > 0 {
-        let (row, col, direction) = queue.pop_front().unwrap();
+        let (col, row, direction) = queue.pop_front().unwrap();
         visit_tile(
-            (row, col),
+            (col, row),
             direction,
             contraption,
             &mut energized_tiles,
@@ -64,6 +64,8 @@ fn visit_tile(
         usize::try_from(point.1).unwrap(),
     );
 
+    println!("Visiting point {:?}", point);
+
     // If the point is within the grid, insert into the visited set
     visited.insert(visited_point);
 
@@ -89,8 +91,8 @@ fn visit_tile(
             Direction::East => queue.push_back((point.0 - 1, point.1, from)),
             Direction::West => queue.push_back((point.0 + 1, point.1, from)),
             Direction::North | Direction::South => {
-                queue.push_back((point.0 - 1, point.1, Direction::West));
-                queue.push_back((point.0 + 1, point.1, Direction::East));
+                queue.push_back((point.0 - 1, point.1, Direction::East));
+                queue.push_back((point.0 + 1, point.1, Direction::West));
             }
         },
         '|' => match from {
