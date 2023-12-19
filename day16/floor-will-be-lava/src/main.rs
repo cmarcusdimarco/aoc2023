@@ -1,8 +1,9 @@
 use std::{
-    collections::{HashSet, VecDeque},
+    collections::{HashMap, VecDeque},
     fs,
 };
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 enum Direction {
     North,
     East,
@@ -21,8 +22,8 @@ fn parse_contraption(path: &str) -> Vec<String> {
     contraption
 }
 
-fn energize_tiles(contraption: &Vec<String>) -> HashSet<(usize, usize)> {
-    let mut energized_tiles: HashSet<(usize, usize)> = HashSet::new();
+fn energize_tiles(contraption: &Vec<String>) -> HashMap<(usize, usize), Vec<Direction>> {
+    let mut energized_tiles: HashMap<(usize, usize), Vec<Direction>> = HashMap::new();
     let mut queue: VecDeque<(i8, i8, Direction)> = VecDeque::new();
 
     // We can recurse through the path of the grid in order to more easily support
@@ -47,7 +48,7 @@ fn visit_tile(
     point: (i8, i8),
     from: Direction,
     contraption: &Vec<String>,
-    visited: &mut HashSet<(usize, usize)>,
+    visited: &mut HashMap<(usize, usize), Vec<Direction>>,
     queue: &mut VecDeque<(i8, i8, Direction)>,
 ) {
     // Check that the point will not be beyond the indices of the grid
@@ -66,8 +67,19 @@ fn visit_tile(
 
     println!("Visiting point {:?}", point);
 
-    // If the point is within the grid, insert into the visited set
-    visited.insert(visited_point);
+    // If the point is within the grid,
+    // check to see if we have been here before from the same direction.
+    // If so, exit.
+    // If not, insert.
+    let entry = visited.get_mut(&visited_point);
+
+    match entry {
+        Some(list) if list.contains(&from) => return,
+        Some(list) => list.push(from.clone()),
+        None => {
+            visited.insert(visited_point, vec![from.clone()]);
+        }
+    }
 
     // Move on to the next point
     match contraption[visited_point.1]
@@ -148,7 +160,7 @@ mod tests {
     #[test]
     fn energizes_tiles() {
         let input = parse_contraption("test.txt");
-        let actual: HashSet<(usize, usize)> = energize_tiles(&input);
+        let actual: HashMap<(usize, usize), Vec<Direction>> = energize_tiles(&input);
 
         assert_eq!(46, actual.len())
     }
