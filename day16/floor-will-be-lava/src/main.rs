@@ -22,13 +22,16 @@ fn parse_contraption(path: &str) -> Vec<String> {
     contraption
 }
 
-fn energize_tiles(contraption: &Vec<String>) -> HashMap<(usize, usize), Vec<Direction>> {
+fn energize_tiles(
+    contraption: &Vec<String>,
+    beam_a_start: (i8, i8, Direction),
+) -> HashMap<(usize, usize), Vec<Direction>> {
     let mut energized_tiles: HashMap<(usize, usize), Vec<Direction>> = HashMap::new();
     let mut queue: VecDeque<(i8, i8, Direction)> = VecDeque::new();
 
     // We can recurse through the path of the grid in order to more easily support
     // the multiple pathing.
-    queue.push_back((0, 0, Direction::West));
+    queue.push_back(beam_a_start);
 
     while queue.len() > 0 {
         let (col, row, direction) = queue.pop_front().unwrap();
@@ -127,12 +130,33 @@ fn visit_tile(
 
 fn main() {
     let contraption = parse_contraption("input.txt");
-    let energized_tiles = energize_tiles(&contraption);
+    let mut max: usize = 0;
+    let directions = vec![
+        Direction::North,
+        Direction::East,
+        Direction::South,
+        Direction::West,
+    ];
 
-    println!(
-        "The amount of tiles energized is: {:?}",
-        energized_tiles.len()
-    );
+    for direction in directions.iter() {
+        for i in 0..contraption.len() {
+            let i = i8::try_from(i).unwrap();
+            let length = i8::try_from(contraption.len() - 1).unwrap();
+
+            let point: (i8, i8, Direction) = match direction {
+                Direction::North => (i, 0, direction.clone()),
+                Direction::East => (length, i, direction.clone()),
+                Direction::South => (i, length, direction.clone()),
+                Direction::West => (0, i, direction.clone()),
+            };
+
+            let energized_tiles = energize_tiles(&contraption, point);
+
+            max = std::cmp::max(max, energized_tiles.len());
+        }
+    }
+
+    println!("The maximum amount of tiles energized is: {:?}", max);
 }
 
 #[cfg(test)]
@@ -159,9 +183,33 @@ mod tests {
 
     #[test]
     fn energizes_tiles() {
-        let input = parse_contraption("test.txt");
-        let actual: HashMap<(usize, usize), Vec<Direction>> = energize_tiles(&input);
+        let contraption = parse_contraption("test.txt");
+        let mut max: usize = 0;
+        let directions = vec![
+            Direction::North,
+            Direction::East,
+            Direction::South,
+            Direction::West,
+        ];
 
-        assert_eq!(46, actual.len())
+        for direction in directions.iter() {
+            for i in 0..contraption.len() {
+                let i = i8::try_from(i).unwrap();
+                let length = i8::try_from(contraption.len() - 1).unwrap();
+
+                let point: (i8, i8, Direction) = match direction {
+                    Direction::North => (i, 0, direction.clone()),
+                    Direction::East => (length, i, direction.clone()),
+                    Direction::South => (i, length, direction.clone()),
+                    Direction::West => (0, i, direction.clone()),
+                };
+
+                let energized_tiles = energize_tiles(&contraption, point);
+
+                max = std::cmp::max(max, energized_tiles.len());
+            }
+        }
+
+        assert_eq!(51, max)
     }
 }
